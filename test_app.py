@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from fastapi.testclient import TestClient
-from app import app, Submission
+from app import app, Submission, verify_key
 
 
 @pytest.fixture
@@ -53,11 +53,17 @@ def test_root_endpoint_returns_welcome_message(client):
 
 def test_submit_endpoint_inserts_valid_data(client, test_db, monkeypatch):
     """Test that the '/submit' endpoint successfully inserts valid submission data into the database."""
+    # Mock the API key verification to always pass
+    def mock_verify_key():
+        return "test_api_key"
+    
+    app.dependency_overrides[verify_key] = mock_verify_key
+    
     # Monkey patch the database connection to use test database
     original_connect = sqlite3.connect
     
     def mock_connect(db_name):
-        if db_name == "submissions.db":
+        if db_name == "./submissions.db" or db_name == "submissions.db":
             return original_connect(test_db)
         return original_connect(db_name)
     
@@ -73,7 +79,7 @@ def test_submit_endpoint_inserts_valid_data(client, test_db, monkeypatch):
     }
     
     # Submit data via API
-    response = client.post("/submit", json=test_submission)
+    response = client.post("/submit", json=test_submission, headers={"x-api-key": "test_api_key"})
     
     # Verify response
     assert response.status_code == 200
@@ -88,6 +94,9 @@ def test_submit_endpoint_inserts_valid_data(client, test_db, monkeypatch):
     assert row is not None
     assert row[0] == "student123"
     assert json.loads(row[1]) == test_submission["answers"]
+    
+    # Clean up
+    app.dependency_overrides.clear()
 
 
 def test_submissions_table_created_on_startup():
@@ -123,11 +132,17 @@ def test_submissions_table_created_on_startup():
 
 def test_timestamp_stored_in_eastern_timezone(client, test_db, monkeypatch):
     """Test that the 'timestamp' in the database is stored in the 'America/New_York' timezone."""
+    # Mock the API key verification to always pass
+    def mock_verify_key():
+        return "test_api_key"
+    
+    app.dependency_overrides[verify_key] = mock_verify_key
+    
     # Monkey patch the database connection to use test database
     original_connect = sqlite3.connect
     
     def mock_connect(db_name):
-        if db_name == "submissions.db":
+        if db_name == "./submissions.db" or db_name == "submissions.db":
             return original_connect(test_db)
         return original_connect(db_name)
     
@@ -144,7 +159,7 @@ def test_timestamp_stored_in_eastern_timezone(client, test_db, monkeypatch):
     before_time = datetime.now(eastern)
     
     # Submit data via API
-    response = client.post("/submit", json=test_submission)
+    response = client.post("/submit", json=test_submission, headers={"x-api-key": "test_api_key"})
     assert response.status_code == 200
     
     # Capture the time after submission
@@ -173,3 +188,6 @@ def test_timestamp_stored_in_eastern_timezone(client, test_db, monkeypatch):
     
     # Verify the timestamp is within the expected time range
     assert before_time <= stored_timestamp <= after_time, "Timestamp should be between before and after times"
+    
+    # Clean up
+    app.dependency_overrides.clear()

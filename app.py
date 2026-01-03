@@ -18,7 +18,9 @@ app = FastAPI()
 eastern = ZoneInfo("America/New_York")
 
 # Initialize database
-conn = sqlite3.connect("/data/submissions.db")
+# Use /data/submissions.db on Railway, ./submissions.db locally
+DB_PATH = os.environ.get("DB_PATH", "./submissions.db")
+conn = sqlite3.connect(DB_PATH)
 conn.execute("""
     CREATE TABLE IF NOT EXISTS submissions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,7 +42,7 @@ def hello():
 
 @app.post("/submit")
 def submit(data: Submission, _: str = Depends(verify_key)):
-    conn = sqlite3.connect("/data/submissions.db")
+    conn = sqlite3.connect(DB_PATH)
     timestamp = datetime.now(eastern).isoformat()
     conn.execute(
         "INSERT INTO submissions (student_id, timestamp, answers) VALUES (?, ?, ?)",
@@ -52,21 +54,21 @@ def submit(data: Submission, _: str = Depends(verify_key)):
     
 @app.get("/submissions")
 def get_submissions(_: str = Depends(verify_key)):
-    conn = sqlite3.connect("/data/submissions.db")
+    conn = sqlite3.connect(DB_PATH)
     rows = conn.execute("SELECT * FROM submissions").fetchall()
     conn.close()
     return {"submissions": rows}
     
 @app.get("/submissions")
 def get_submissions(_: str = Depends(verify_key)):
-    conn = sqlite3.connect("/data/submissions.db")
+    conn = sqlite3.connect(DB_PATH)
     rows = conn.execute("SELECT * FROM submissions ORDER BY timestamp DESC LIMIT 20").fetchall()
     conn.close()
     return {"submissions": rows}
     
 @app.get("/submissions/{student_id}")
 def get_student_submissions(student_id: str, _: str = Depends(verify_key)):
-    conn = sqlite3.connect("/data/submissions.db")
+    conn = sqlite3.connect(DB_PATH)
     rows = conn.execute("SELECT * FROM submissions WHERE student_id = ? ORDER BY timestamp DESC LIMIT 20").fetchall()
     conn.close()
     return {"submissions": rows}
