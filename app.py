@@ -4,6 +4,14 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 import sqlite3
 import json
+import os
+from fastapi import Header, HTTPException
+
+API_KEY = os.environ.get("API_KEY")
+
+def verify_key(x_api_key: str = Header(...)):
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid API key")
 
 app = FastAPI()
 eastern = ZoneInfo("America/New_York")
