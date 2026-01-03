@@ -56,3 +56,17 @@ def get_submissions(_: str = Depends(verify_key)):
     rows = conn.execute("SELECT * FROM submissions").fetchall()
     conn.close()
     return {"submissions": rows}
+    
+@app.get("/submissions")
+def get_submissions(_: str = Depends(verify_key)):
+    conn = sqlite3.connect("/data/submissions.db")
+    rows = conn.execute("SELECT * FROM submissions ORDER BY timestamp DESC LIMIT 20").fetchall()
+    conn.close()
+    return {"submissions": rows}
+    
+@app.get("/submissions/{student_id}")
+def get_student_submissions(student_id: str, _: str = Depends(verify_key)):
+    conn = sqlite3.connect("/data/submissions.db")
+    rows = conn.execute("SELECT * FROM submissions WHERE student_id = ? ORDER BY timestamp DESC LIMIT 20").fetchall()
+    conn.close()
+    return {"submissions": rows}
