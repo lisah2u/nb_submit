@@ -18,7 +18,7 @@ app = FastAPI()
 eastern = ZoneInfo("America/New_York")
 
 # Initialize database
-conn = sqlite3.connect("submissions.db")
+conn = sqlite3.connect("/data/submissions.db")
 conn.execute("""
     CREATE TABLE IF NOT EXISTS submissions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,7 +40,7 @@ def hello():
 
 @app.post("/submit")
 def submit(data: Submission, _: str = Depends(verify_key)):
-    conn = sqlite3.connect("submissions.db")
+    conn = sqlite3.connect("/data/submissions.db")
     timestamp = datetime.now(eastern).isoformat()
     conn.execute(
         "INSERT INTO submissions (student_id, timestamp, answers) VALUES (?, ?, ?)",
@@ -52,7 +52,7 @@ def submit(data: Submission, _: str = Depends(verify_key)):
     
 @app.get("/submissions")
 def get_submissions(_: str = Depends(verify_key)):
-    conn = sqlite3.connect("submissions.db")
+    conn = sqlite3.connect("/data/submissions.db")
     rows = conn.execute("SELECT * FROM submissions").fetchall()
     conn.close()
     return {"submissions": rows}
