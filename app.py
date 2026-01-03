@@ -40,3 +40,10 @@ def submit(data: Submission):
     conn.commit()
     conn.close()
     return {"status": "ok"}
+    
+@app.get("/submissions")
+def get_submissions():
+    conn = sqlite3.connect("submissions.db")
+    rows = conn.execute("SELECT * FROM submissions").fetchall()
+    conn.close()
+    return {"submissions": rows}
