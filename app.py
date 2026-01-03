@@ -6,6 +6,7 @@ import sqlite3
 import json
 import os
 from fastapi import Header, HTTPException
+from fastapi import Depends
 
 API_KEY = os.environ.get("API_KEY")
 
@@ -38,7 +39,7 @@ def hello():
     return {"message": "Hello from FastAPI!"}
 
 @app.post("/submit")
-def submit(data: Submission):
+def submit(data: Submission, _: str = Depends(verify_key)):
     conn = sqlite3.connect("submissions.db")
     timestamp = datetime.now(eastern).isoformat()
     conn.execute(
@@ -50,7 +51,7 @@ def submit(data: Submission):
     return {"status": "ok"}
     
 @app.get("/submissions")
-def get_submissions():
+def get_submissions(_: str = Depends(verify_key)):
     conn = sqlite3.connect("submissions.db")
     rows = conn.execute("SELECT * FROM submissions").fetchall()
     conn.close()
